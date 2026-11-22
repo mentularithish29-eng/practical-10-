@@ -1,0 +1,145 @@
+Project Structure: StudentManagementApi|-- Models|  
+|-- Student.cs|-- Controllers| 
+|-- StudentsController.cs|-- Properties|   
+|-- launchSettings.json|-- Program.cs
+|-- StudentManagementApi.csproj|-
+- StudentManagementApi.http|
+-- appsettings.json
+
+(Models) Student.cs  
+[Student Entity & Data Annotation Validation]: 
+using System.ComponentModel.DataAnnotations;namespace StudentManagementApi
+.Models;public class Student{    public int Id { get; set; }  
+[Required]    [StringLength(100)]   
+public string Name { get; set; } = string.Empty;   
+[Required]    [EmailAddress]    
+ublic string Email { get; set; } = string.Empty;  
+[Required]    public string Major { get; set; } = string.Empty;}
+(Controllers) StudentsController.cs [RESTful CRUD Web API Controller]:
+using Microsoft.AspNetCore.Mvc;
+using StudentManagementApi.Models;
+namespace StudentManagementApi.Controllers;
+[ApiController]
+[Route("api/[controller]")]
+public class StudentsController : ControllerBase
+{
+ // In-memory store pre-populated with sample data
+ private static readonly List<Student> _students =
+ [
+ new Student { Id = 1, Name = "Aarav Patel", Email = "aarav@example.com", Major =
+"Computer Science" },
+ new Student { Id = 2, Name = "Maya Lin", Email = "maya@example.com", Major = "Data
+Science" }
+ ];
+ private static int _nextId = 3;
+ // GET: api/students
+ [HttpGet]
+ public ActionResult<IEnumerable<Student>> GetAll()
+ {
+ return Ok(_students);
+ }
+ // GET: api/students/1
+ [HttpGet("{id:int}")]
+ public ActionResult<Student> GetById(int id)var student = _students.FirstOrDefault(s => s.Id == id);
+ if (student is null)
+ return NotFound(new { message = $"Student with ID {id} not found." });
+ return Ok(student);
+ }
+ // POST: api/students
+ [HttpPost]
+ public ActionResult<Student> Create(Student newStudent)
+ {
+ newStudent.Id = _nextId++;
+ _students.Add(newStudent);
+ return CreatedAtAction(nameof(GetById), new { id = newStudent.Id }, newStudent);
+ }
+ // PUT: api/students/1
+ [HttpPut("{id:int}")]
+ public IActionResult Update(int id, Student updatedStudent)
+ {
+ var existing = _students.FirstOrDefault(s => s.Id == id);
+ if (existing is null)
+ return NotFound(new { message = $"Student with ID {id} not found." });
+ existing.Name = updatedStudent.Name;
+ existing.Email = updatedStudent.Email;
+ existing.Major = updatedStudent.Major;
+ return NoContent();
+ }
+ // DELETE: api/students/1
+ [HttpDelete("{id:int}")]
+ public IActionResult Delete(int id)
+ {
+ var student = _students.FirstOrDefault(s => s.Id == id);
+ if (student is null)
+ return NotFound(new { message = $"Student with ID {id} not found." });
+ _students.Remove(student);
+ return NoContent();
+ }
+}
+Program.cs [ASP.NET Core Middleware Pipeline & Service Registration]:
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+var app = builder.Build();
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();app.Run();
+StudentManagementApi.csproj [Project File (.NET 10.0 Web SDK)]:
+<Project Sdk="Microsoft.NET.Sdk.Web">
+ <PropertyGroup>
+ <TargetFramework>net10.0</TargetFramework>
+ <Nullable>enable</Nullable>
+ <ImplicitUsings>enable</ImplicitUsings>
+ <RollForward>LatestMajor</RollForward>
+ </PropertyGroup>
+</Project>
+(Properties) launchSettings.json [Development Server & Browser Launch Profile]:
+{
+ "$schema": "http://json.schemastore.org/launchsettings.json",
+ "profiles": {
+ "http": {
+ "commandName": "Project",
+ "dotnetRunMessages": true,
+ "launchBrowser": true,
+ "launchUrl": "api/students",
+ "applicationUrl": "http://localhost:5080",
+ "environmentVariables": {
+ "ASPNETCORE_ENVIRONMENT": "Development"
+ }
+ }
+ }
+}
+StudentManagementApi.http [Visual Studio HTTP Client Endpoint Tests]:
+@HostAddress = http://localhost:5080
+### Get all students
+GET {{HostAddress}}/api/students
+Accept: application/json
+### Get student by ID
+GET {{HostAddress}}/api/students/1
+Accept: application/json
+### Create a new student
+POST {{HostAddress}}/api/students
+Content-Type: application/json
+{
+ "name": "Rohan Sharma",
+ "email": "rohan@example.com",
+ "major": "Mechanical Engineering"
+}
+### Update student 1
+PUT {{HostAddress}}/api/students/1Content-Type: application/json
+{
+ "name": "Aarav Patel",
+ "email": "aarav.patel@example.com",
+ "major": "Artificial Intelligence"
+}
+### Delete student 2
+DELETE {{HostAddress}}/api/students/2
+appsettings.json [Logging & AllowedHosts Configuration]:
+{
+ "Logging": {
+ "LogLevel": {
+ "Default": "Information",
+ "Microsoft.AspNetCore": "Warning"
+ }
+ },
+ "AllowedHosts": "*"
+}
